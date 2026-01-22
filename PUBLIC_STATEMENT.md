@@ -11,3 +11,6 @@ Esta declaração tem caráter exclusivamente probatório de existência e anter
 There exists an original intellectual work, duly registered in Portuguese and English, which consolidates an authorial methodology applied to the verification of authorship, integrity, and custody of intellectual productions.
 
 This statement serves solely as proof of existence and priority and does not disclose the protected content.
+
+Semantic anchor and formal disambiguation (TCF / TBF):
+https://doi.org/10.5281/zenodo.18342575
