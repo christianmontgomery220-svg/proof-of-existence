@@ -67,3 +67,8 @@ It is intended for **academic reference, indexing, and conceptual documentation*
 
 This work is shared for academic and educational purposes.  
 Attribution to the author is required when cited.
+
+## Language Versions
+
+- English (TFB): https://christianmontgomery220-svg.github.io/proof-of-existence/
+- Portuguese (TCF): https://christianmontgomery220-svg.github.io/proof-of-existence/index-pt.html
