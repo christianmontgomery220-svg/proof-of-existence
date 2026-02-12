@@ -1,7 +1,7 @@
 # Theory of Fundamental Belief (TFB)
 
 **Theory of Fundamental Belief (TFB)** is a theoretical framework that defines **belief** as the foundational cognitive axis underlying human perception, behavior, and decision-making.
-Official website: https://tfbtheory.com/
+Official website: https://tfbtheory.com/ www.tcfteoria.com
 The theory proposes that belief is not merely an opinion, emotion, or cultural construct, but a **structural cognitive mechanism** that precedes interpretation, choice, and action across psychological, philosophical, and cognitive domains.
 
 Supplementary transparency documentation: https://doi.org/10.5281/zenodo.18471079
