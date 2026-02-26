@@ -32,6 +32,8 @@ Researcher and author
 
 ## Core Definition
 
+https://doi.org/10.5281/zenodo.18778898
+
 The Theory of Fundamental Belief posits that belief operates as a **primary cognitive structure**, influencing perception, interpretation, and behavioral response **before conscious reasoning occurs**.
 
 Rather than treating belief as a derivative of culture, ideology, or emotion, TFB positions belief as an **organizing principle of cognition**, present across disciplines including psychology, philosophy, and cognitive science.
