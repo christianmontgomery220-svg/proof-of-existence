@@ -65,6 +65,8 @@ This repository serves as a **public proof of existence and authorship**, provid
 
 It is intended for **academic reference, indexing, and conceptual documentation**.
 
+It also serves as a **public proof of existence for the official website** https://tfbtheory.com, connecting the domain to the repository, DOI, Wikidata entity, and the author's ORCID record.
+
 ---
 
 ## License
