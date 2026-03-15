@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chris Montgomery">
+    <meta name="copyright" content="© 2025–2026 Chris Montgomery">
+    <title>Anonymo AI — Captura de Voz</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #3d5166 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        /* ── STATUS ── */
+        .status-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            background: #ecf0f1;
+            border: 4px solid #bdc3c7;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+        .status-ring.connecting {
+            border-color: #f39c12;
+            background: #fff8ee;
+            animation: pulse-orange 1.5s infinite;
+        }
+        .status-ring.connected {
+            border-color: #27ae60;
+            background: #d5f4e6;
+            animation: pulse-green 2s infinite;
+        }
+        .status-ring.recording {
+            border-color: #e74c3c;
+            background: #fdecea;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(243,156,18,0.4); }
+            50%       { box-shadow: 0 0 0 16px rgba(243,156,18,0); }
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(39,174,96,0.3); }
+            50%       { box-shadow: 0 0 0 14px rgba(39,174,96,0); }
+        }
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
+            50%       { box-shadow: 0 0 0 18px rgba(231,76,60,0); }
+        }
+
+        .status-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 6px;
+        }
+        .status-sub {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-bottom: 24px;
+            min-height: 18px;
+        }
+
+        /* ── CAMPO DE CÓDIGO ── */
+        .code-section {
+            margin-bottom: 20px;
+        }
+        .code-section label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .code-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .code-input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 4px;
+            color: #2c3e50;
+            outline: none;
+            transition: border-color 0.2s;
+            text-transform: uppercase;
+        }
+        .code-input-row input:focus {
+            border-color: #667eea;
+        }
+        .code-input-row input.error {
+            border-color: #e74c3c;
+            background: #fdecea;
+        }
+
+        /* ── BOTÕES ── */
+        .btn-connect {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+        .btn-connect:hover { background: #5568d3; transform: translateY(-1px); }
+        .btn-connect:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; }
+
+        .btn-disconnect {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none;
+        }
+        .btn-disconnect:hover { background: #c0392b; }
+        .btn-disconnect.show { display: block; }
+
+        /* ── MINI WAVEFORM ── */
+        .mini-wave {
+            margin: 20px auto 0;
+            display: none;
+        }
+        .mini-wave.show { display: block; }
+        canvas {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            background: #f4f4f4;
+            display: block;
+        }
+
+        /* ── TERMO ── */
+        .termo {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 11px;
+            color: #7f8c8d;
+            line-height: 1.7;
+            border-left: 3px solid #667eea;
+            text-align: left;
+        }
+        .termo strong { color: #2c3e50; }
+
+        /* ── FOOTER ── */
+        .page-footer {
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="logo">🎙️</div>
+        <h1>Anonymo AI — Captura de Voz</h1>
+        <p class="subtitle">Sessão de pesquisa com autorização.<br>Sua voz será analisada em tempo real.</p>
+
+        <!-- Anel de status -->
+        <div class="status-ring" id="statusRing">🎤</div>
+        <div class="status-text" id="statusText">Aguardando conexão</div>
+        <div class="status-sub"  id="statusSub">Digite o código fornecido pelo pesquisador</div>
+
+        <!-- Campo de código -->
+        <div class="code-section" id="codeSection">
+            <label>Código da sessão:</label>
+            <div class="code-input-row">
+                <input type="text" id="codeInput" maxlength="6" placeholder="EX: A1B2C3" autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+
+        <button class="btn-connect" id="btnConnect">🔗 Conectar</button>
+        <button class="btn-disconnect" id="btnDisconnect">⏹️ Encerrar sessão</button>
+
+        <!-- Mini waveform -->
+        <div class="mini-wave" id="miniWave">
+            <canvas id="miniCanvas"></canvas>
+        </div>
+
+        <!-- Termo de uso -->
+        <div class="termo">
+            <strong>📋 Nota:</strong> Esta sessão é conduzida por um pesquisador autorizado.
+            Sua participação é voluntária e os dados são utilizados exclusivamente para fins de pesquisa,
+            conforme termo de consentimento assinado.
+            <br><br>
+            <strong>Author:</strong> Chris Montgomery &nbsp;|&nbsp;
+            <strong>ORCID:</strong> 0009-0009-5364-249X &nbsp;|&nbsp;
+            <strong>© 2025–2026</strong>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        Anonymo AI — © 2025–2026 Chris Montgomery
+    </div>
+
+    <!-- PeerJS via CDN para WebRTC simplificado -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+    // ─────────────────────────────────────────
+    // VARIÁVEIS
+    // ─────────────────────────────────────────
+    let peer, conn, audioStream, audioContext, analyser;
+    let miniData = new Uint8Array(256);
+    let animating = false;
+
+    const statusRing = document.getElementById('statusRing');
+    const statusText = document.getElementById('statusText');
+    const statusSub  = document.getElementById('statusSub');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconn = document.getElementById('btnDisconnect');
+    const codeSection= document.getElementById('codeSection');
+    const miniWave   = document.getElementById('miniWave');
+    const miniCanvas = document.getElementById('miniCanvas');
+    const ctxMini    = miniCanvas.getContext('2d');
+
+    // ─────────────────────────────────────────
+    // RESIZE CANVAS
+    // ─────────────────────────────────────────
+    function resizeMini() {
+        miniCanvas.width  = miniCanvas.offsetWidth  || 360;
+        miniCanvas.height = miniCanvas.offsetHeight || 80;
+    }
+    resizeMini();
+    window.addEventListener('resize', resizeMini);
+
+    // ─────────────────────────────────────────
+    // CONECTAR
+    // ─────────────────────────────────────────
+    btnConnect.addEventListener('click', async () => {
+        const code = document.getElementById('codeInput').value.trim().toUpperCase();
+        if (code.length < 4) {
+            document.getElementById('codeInput').classList.add('error');
+            statusSub.textContent = '⚠️ Código inválido. Verifique com o pesquisador.';
+            return;
+        }
+        document.getElementById('codeInput').classList.remove('error');
+        await conectar(code);
+    });
+
+    document.getElementById('codeInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') btnConnect.click();
+    });
+
+    async function conectar(code) {
+        setStatus('connecting', '🔄', 'Conectando...', 'Aguarde enquanto estabelecemos a conexão...');
+        btnConnect.disabled = true;
+
+        try {
+            // Pede acesso ao microfone
+            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch(e) {
+            setStatus('', '🎤', 'Sem acesso ao microfone', 'Permita o acesso ao microfone e tente novamente.');
+            btnConnect.disabled = false;
+            return;
+        }
+
+        // Cria peer com ID baseado no código (lado captura = código + "-cap")
+        peer = new Peer(code + '-cap', {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true
+        });
+
+        peer.on('open', () => {
+            // Conecta ao painel do pesquisador (código + "-host")
+            conn = peer.connect(code + '-host');
+
+            conn.on('open', () => {
+                setStatus('connected', '✅', 'Conectado!', 'Aguardando o pesquisador iniciar...');
+                // Envia stream de áudio via WebRTC call
+                const call = peer.call(code + '-host', audioStream);
+                call.on('error', err => console.warn('Call error:', err));
+                iniciarMiniWave();
+            });
+
+            conn.on('data', data => {
+                // Recebe mensagens do pesquisador
+                if (data.type === 'start') {
+                    setStatus('recording', '🔴', 'Captando sua voz...', 'Fique à vontade para falar normalmente.');
+                }
+                if (data.type === 'stop') {
+                    setStatus('connected', '✅', 'Sessão pausada', 'Aguardando o pesquisador.');
+                }
+                if (data.type === 'marker') {
+                    // Pisca a tela brevemente ao marcar ponto
+                    document.body.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    setTimeout(() => {
+                        document.body.style.background = 'linear-gradient(135deg, #2c3e50 0%, #3d5166 100%)';
+                    }, 400);
+                }
+            });
+
+            conn.on('close', () => encerrar());
+            conn.on('error', () => encerrar());
+        });
+
+        peer.on('error', err => {
+            setStatus('', '❌', 'Erro de conexão', 'Verifique o código e tente novamente.');
+            btnConnect.disabled = false;
+            console.warn('Peer error:', err);
+        });
+
+        // Botão encerrar
+        btnDisconn.classList.add('show');
+        codeSection.style.opacity = '0.4';
+        codeSection.style.pointerEvents = 'none';
+    }
+
+    // ─────────────────────────────────────────
+    // MINI WAVEFORM
+    // ─────────────────────────────────────────
+    function iniciarMiniWave() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        const src = audioContext.createMediaStreamSource(audioStream);
+        src.connect(analyser);
+        miniWave.classList.add('show');
+        animating = true;
+        drawMini();
+    }
+
+    function drawMini() {
+        if (!animating) return;
+        analyser.getByteTimeDomainData(miniData);
+
+        const W = miniCanvas.width;
+        const H = miniCanvas.height;
+        const cy = H / 2;
+
+        ctxMini.fillStyle = '#f4f4f4';
+        ctxMini.fillRect(0, 0, W, H);
+
+        ctxMini.strokeStyle = '#667eea';
+        ctxMini.lineWidth = 2;
+        ctxMini.beginPath();
+        const sw = W / miniData.length;
+        for (let i = 0; i < miniData.length; i++) {
+            const y = cy - ((miniData[i] / 128.0) - 1) * (cy * 0.85);
+            i === 0 ? ctxMini.moveTo(i * sw, y) : ctxMini.lineTo(i * sw, y);
+        }
+        ctxMini.stroke();
+        requestAnimationFrame(drawMini);
+    }
+
+    // ─────────────────────────────────────────
+    // ENCERRAR
+    // ─────────────────────────────────────────
+    btnDisconn.addEventListener('click', encerrar);
+
+    function encerrar() {
+        animating = false;
+        if (conn)  { try { conn.close(); } catch(e){} }
+        if (peer)  { try { peer.destroy(); } catch(e){} }
+        if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+        miniWave.classList.remove('show');
+        btnDisconn.classList.remove('show');
+        codeSection.style.opacity = '';
+        codeSection.style.pointerEvents = '';
+        btnConnect.disabled = false;
+        setStatus('', '🎤', 'Sessão encerrada', 'Obrigado pela participação!');
+    }
+
+    // ─────────────────────────────────────────
+    // HELPER STATUS
+    // ─────────────────────────────────────────
+    function setStatus(cls, icon, text, sub) {
+        statusRing.className = 'status-ring' + (cls ? ' ' + cls : '');
+        statusRing.textContent = icon;
+        statusText.textContent = text;
+        statusSub.textContent  = sub;
+    }
+    // Preenche código automaticamente se vier na URL (?code=XXXXXX)
+    window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const code   = params.get('code');
+        if (code) {
+            document.getElementById('codeInput').value = code.toUpperCase();
+            setTimeout(() => btnConnect.click(), 800);
+        }
+    });
+    </script>
+</body>
+</html>

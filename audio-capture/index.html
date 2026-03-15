@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chris Montgomery">
+    <meta name="copyright" content="© 2025–2026 Chris Montgomery">
+    <meta name="description" content="Anonymo AI - Sistema de captura e análise de padrões de voz em tempo real. Desenvolvido por Chris Montgomery, ORCID: 0009-0009-5364-249X.">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Anonymo AI">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- PeerJS para WebRTC -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <title>Anonymo AI - Teste de Áudio e Frequência</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── BANNER PWA ── */
+        #pwa-banner {
+            display: none;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #1a252f, #2c3e50);
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            padding: 14px 20px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        #pwa-banner.show { display: flex; }
+        #pwa-banner p { color: #ecf0f1; font-size: 13px; flex: 1; }
+        #pwa-banner p strong { color: #a29bfe; }
+        #btn-install-pwa {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        #btn-install-pwa:hover { background: #764ba2; }
+        #btn-dismiss-pwa {
+            background: transparent;
+            color: #7f8c8d;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        #btn-dismiss-pwa:hover { color: #ecf0f1; }
+
+        /* ── MAIN ── */
+        .main-content {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #667eea; margin-bottom: 10px; font-size: 28px; }
+        .header p  { color: #666; font-size: 14px; }
+
+        /* ── CONTROLS ── */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls-export {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px dashed #ccc;
+        }
+
+        .controls-export label {
+            color: #555;
+            font-size: 13px;
+            font-weight: 600;
+            align-self: center;
+            margin-right: 4px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        .btn-primary.active {
+            background: #764ba2;
+            box-shadow: 0 5px 15px rgba(118,75,162,0.4);
+        }
+
+        .btn-noise { background: #e74c3c; color: white; }
+        .btn-noise:hover { background: #c0392b; }
+
+        /* ── PAINEL DE RUÍDO ── */
+        .noise-panel {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff5f5;
+            border-radius: 12px;
+            border: 2px solid #e74c3c;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .noise-panel.show { display: flex; }
+        .noise-panel label {
+            font-size: 12px;
+            color: #c0392b;
+            font-weight: 700;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+        .btn-noise-type {
+            background: #fff;
+            border: 2px solid #e74c3c;
+            color: #c0392b;
+            border-radius: 20px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-noise-type:hover {
+            background: #e74c3c;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-noise-type.active {
+            background: #e74c3c;
+            color: #fff;
+            box-shadow: 0 3px 10px rgba(231,76,60,0.4);
+        }
+
+        .btn-mark {
+            background: #f39c12;
+            color: white;
+            border: 2px solid #e67e22;
+            font-size: 15px;
+            animation: none;
+            transition: all 0.2s;
+        }
+        .btn-mark:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(243,156,18,0.5);
+        }
+        .btn-mark.pulse {
+            animation: markPulse 0.4s ease;
+        }
+        @keyframes markPulse {
+            0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(243,156,18,0.7); }
+            50%  { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(243,156,18,0); }
+            100% { transform: scale(1);    box-shadow: none; }
+        }
+
+        /* Lista de marcações */
+        .markers-panel {
+            margin-top: 16px;
+            background: #fff8ee;
+            border: 1px solid #f39c12;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .markers-panel h4 {
+            color: #e67e22;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .markers-panel ul {
+            list-style: none;
+            max-height: 130px;
+            overflow-y: auto;
+        }
+        .markers-panel ul li {
+            font-size: 12px;
+            font-family: monospace;
+            color: #555;
+            padding: 4px 0;
+            border-bottom: 1px solid #fde8c0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .markers-panel ul li:last-child { border-bottom: none; color: #e67e22; font-weight: 700; }
+        .marker-num {
+            background: #f39c12;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .markers-empty { color: #caa96a; font-size: 12px; font-style: italic; }
+
+        /* ── PAINEL DAS 5 BOLINHAS ── */
+        .dot-panel {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            border: 2px solid #ddd;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .dot-panel.show { display: flex; }
+        .dot-panel label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .dot-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .dot-btn:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .dot-btn.selected {
+            border-color: rgba(0,0,0,0.5);
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.15);
+        }
+        .dot-btn[data-color="gray"]   { background: #95a5a6; }
+        .dot-btn[data-color="orange"] { background: #e67e22; }
+        .dot-btn[data-color="yellow"] { background: #f1c40f; }
+        .dot-btn[data-color="green"]  { background: #27ae60; }
+        .dot-btn[data-color="blue"]   { background: #2980b9; }
+        .dot-panel .dot-hint {
+            font-size: 11px;
+            color: #999;
+            width: 100%;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .btn-disabled {
+            background: #bdc3c7;
+            color: #7f8c8d;
+            cursor: not-allowed;
+            opacity: 0.65;
+            position: relative;
+        }
+        .btn-disabled:hover { transform: none; box-shadow: none; background: #bdc3c7; }
+        .badge-soon {
+            display: inline-block;
+            background: #95a5a6;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+        }
+
+        .btn-export-json {
+            background: #27ae60; color: white;
+            padding: 9px 18px; font-size: 13px;
+        }
+        .btn-export-json:hover { background: #219a52; transform: translateY(-1px); }
+
+        .btn-export-csv {
+            background: #f39c12; color: white;
+            padding: 9px 18px; font-size: 13px;
+        }
+        .btn-export-csv:hover { background: #d68910; transform: translateY(-1px); }
+
+        .btn-clear {
+            background: #95a5a6; color: white;
+            padding: 9px 18px; font-size: 13px;
+        }
+        .btn-clear:hover { background: #7f8c8d; transform: translateY(-1px); }
+
+        /* ── SESSION COUNTER ── */
+        .session-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecf0f1;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            align-self: center;
+        }
+        .session-badge span { color: #667eea; font-size: 15px; font-weight: 700; }
+
+        /* ── VISUALIZATIONS ── */
+        .visualizations {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .visualization-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            align-self: start;
+            border: 2px solid #e0e0e0;
+        }
+        .visualization-box h3 { color: #333; margin-bottom: 15px; font-size: 16px; text-align: center; }
+
+        canvas { width: 100%; height: 250px; border-radius: 8px; background: white; display: block; }
+        #canvasUser { height: 500px; }
+
+        .status {
+            margin-top: 15px; padding: 10px;
+            background: #ecf0f1; border-radius: 8px;
+            font-size: 12px; color: #555; text-align: center;
+        }
+        .status.active { background: #d5f4e6; color: #27ae60; }
+
+        /* ── INFO BOX ── */
+        .info-box {
+            background: #ecf0f1; padding: 20px;
+            border-radius: 12px; margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .info-box h4 { color: #333; margin-bottom: 10px; }
+        .info-box p  { color: #666; font-size: 14px; line-height: 1.8; }
+
+        /* ── SESSION LOG ── */
+        .session-log {
+            margin-top: 20px;
+            background: #1a252f;
+            border-radius: 12px;
+            padding: 16px 20px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .session-log h4 { color: #667eea; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .session-log ul { list-style: none; }
+        .session-log ul li {
+            font-size: 11px;
+            color: #95a5a6;
+            padding: 3px 0;
+            border-bottom: 1px solid #2c3e50;
+            font-family: monospace;
+        }
+        .session-log ul li:last-child { border-bottom: none; color: #2ecc71; }
+        .log-empty { color: #4a6274; font-size: 12px; font-style: italic; }
+
+        /* ── FOOTER ── */
+        footer {
+            max-width: 1200px;
+            width: 100%;
+            margin: 30px auto 0;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 35px 30px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-top: 4px solid #667eea;
+        }
+
+        footer .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+
+        footer .footer-col h5 {
+            color: #667eea;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3d5166;
+        }
+
+        footer .footer-col p { font-size: 13px; line-height: 2; color: #bdc3c7; }
+        footer .footer-col p strong { color: #ecf0f1; }
+
+        footer .footer-col a {
+            color: #a29bfe; text-decoration: none; transition: color 0.2s;
+        }
+        footer .footer-col a:hover { color: #fff; text-decoration: underline; }
+
+        footer .orcid-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #a6ce39;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+        footer .orcid-badge:hover { background: #8ab52e; color: #fff; text-decoration: none; }
+
+        footer .methodological-note {
+            background: #1a252f;
+            border-left: 4px solid #9b59b6;
+            border-radius: 8px;
+            padding: 18px 20px;
+        }
+        footer .methodological-note h5 {
+            color: #9b59b6; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+        }
+        footer .methodological-note p {
+            color: #95a5a6; font-size: 12px; line-height: 1.8; font-style: italic;
+        }
+
+        footer .footer-bottom {
+            margin-top: 22px; padding-top: 15px;
+            border-top: 1px solid #3d5166;
+            text-align: center; font-size: 12px; color: #7f8c8d;
+        }
+        footer .footer-bottom strong { color: #bdc3c7; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .visualizations { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; }
+            button { width: 100%; }
+            .header h1 { font-size: 22px; }
+            footer .footer-grid { grid-template-columns: 1fr; gap: 20px; }
+            footer { border-radius: 10px; padding: 25px 20px 20px; }
+            .controls-export { flex-direction: column; }
+            .session-badge { justify-content: center; }
+        }
+        /* ── PAINEL WEBRTC ── */
+        .webrtc-panel {
+            background: #1a252f;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border: 2px solid #3d5166;
+            display: none;
+        }
+        .webrtc-panel.show { display: block; }
+        .webrtc-panel h4 {
+            color: #667eea;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .webrtc-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: start;
+        }
+        .webrtc-code-box {
+            background: #2c3e50;
+            border-radius: 10px;
+            padding: 14px 18px;
+        }
+        .webrtc-code-box label {
+            color: #7f8c8d;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .webrtc-code {
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 8px;
+            font-family: monospace;
+        }
+        .webrtc-code-box .code-hint {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-top: 6px;
+        }
+        #qrcode {
+            background: white;
+            border-radius: 10px;
+            padding: 8px;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #qrcode canvas, #qrcode img { width: 84px !important; height: 84px !important; }
+        .webrtc-status {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .webrtc-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #7f8c8d;
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        .webrtc-dot.waiting    { background: #f39c12; animation: blink 1.5s infinite; }
+        .webrtc-dot.connected  { background: #27ae60; }
+        .webrtc-dot.streaming  { background: #e74c3c; animation: blink 1s infinite; }
+        @keyframes blink {
+            0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+        }
+        .webrtc-status-text { color: #bdc3c7; font-size: 13px; }
+        .webrtc-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-rtc {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-rtc-start  { background: #27ae60; color: #fff; }
+        .btn-rtc-start:hover  { background: #219a52; }
+        .btn-rtc-stop   { background: #e74c3c; color: #fff; display: none; }
+        .btn-rtc-stop:hover   { background: #c0392b; }
+        .btn-rtc-stop.show    { display: inline-block; }
+        .btn-rtc-new    { background: #3d5166; color: #bdc3c7; }
+        .btn-rtc-new:hover    { background: #4a6274; }
+        .btn-open-captura {
+            background: #764ba2; color: white;
+            padding: 9px 18px; font-size: 13px;
+            border: none; border-radius: 8px;
+            font-weight: 700; cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-open-captura:hover { background: #6a3d93; }
+        /* Botão sessão remota na barra de controles */
+        .btn-remote {
+            background: #764ba2;
+            color: white;
+        }
+        .btn-remote:hover {
+            background: #6a3d93;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118,75,162,0.4);
+        }
+        .btn-remote.active { background: #5a3280; }
+    </style>
+</head>
+<body>
+
+    <!-- ── BANNER PWA ── -->
+    <div id="pwa-banner">
+        <p>📲 <strong>Instalar Anonymo AI</strong> — Adicione ao seu desktop ou celular para usar sem internet!</p>
+        <button id="btn-install-pwa">⬇️ Instalar App</button>
+        <button id="btn-dismiss-pwa" title="Fechar">✕</button>
+    </div>
+
+    <!-- ── CONTEÚDO PRINCIPAL ── -->
+    <div class="main-content">
+        <div class="header">
+            <h1>🎙️ Anonymo AI — Teste de Áudio e Frequência</h1>
+            <p>Sistema de captura e análise de padrões de voz em tempo real</p>
+        </div>
+
+        <!-- Controles principais -->
+        <div class="controls">
+            <button class="btn-primary" id="btnStart">▶️ Iniciar Captura</button>
+            <button class="btn-primary" id="btnStop">⏹️ Parar</button>
+            <button class="btn-primary" id="btnVoz">🎤 Voz</button>
+            <button class="btn-primary" id="btnPadrao">📐 Padrão</button>
+            <button class="btn-disabled" id="btnFisiologia" disabled title="Em breve — requer sensor externo no pulso">🧬 Fisiologia <span class="badge-soon">em breve</span></button>
+            <button class="btn-noise"   id="btnNoise">🔇 Ruído</button>
+            <button class="btn-mark"    id="btnMarcar">📌 Marcar Ponto</button>
+            <button class="btn-remote"   id="btnRemote">📡 Sessão Remota</button>
+        </div>
+
+        <!-- Painel de tipos de ruído (abre ao clicar em Ruído) -->
+        <div class="noise-panel" id="noisePanel">
+            <label>🔊 Selecione o tipo de ruído detectado:</label>
+            <button class="btn-noise-type" data-noise="carro"    >🚗 Carro</button>
+            <button class="btn-noise-type" data-noise="cachorro" >🐶 Cachorro</button>
+            <button class="btn-noise-type" data-noise="buzina"   >📣 Buzina</button>
+            <button class="btn-noise-type" data-noise="pessoa"   >🗣️ Pessoa</button>
+            <button class="btn-noise-type" data-noise="ruido"    >⚡ Ruído</button>
+        </div>
+
+        <!-- ── PAINEL WEBRTC ── -->
+        <div class="webrtc-panel" id="webrtcPanel">
+            <h4>📡 Sessão Remota — Captura da Pessoa</h4>
+            <div class="webrtc-grid">
+                <div class="webrtc-code-box">
+                    <label>Código da sessão</label>
+                    <div class="webrtc-code" id="sessionCode">——</div>
+                    <div class="code-hint">A pessoa digita este código em <strong>captura.html</strong></div>
+                </div>
+                <div id="qrcode"></div>
+            </div>
+            <div class="webrtc-status">
+                <div class="webrtc-dot waiting" id="rtcDot"></div>
+                <span class="webrtc-status-text" id="rtcStatusText">Aguardando conexão da pessoa...</span>
+            </div>
+            <div class="webrtc-actions">
+                <button class="btn-rtc btn-rtc-start" id="btnRtcStart">▶️ Iniciar captura remota</button>
+                <button class="btn-rtc btn-rtc-stop"  id="btnRtcStop">⏹️ Parar</button>
+                <button class="btn-rtc btn-rtc-new"   id="btnRtcNew">🔄 Novo código</button>
+                <a class="btn-open-captura" href="captura.html" target="_blank">🔗 Abrir captura.html</a>
+            </div>
+        </div>
+
+        <!-- Painel das 5 bolinhas (abre ao clicar em Padrão) -->
+        <div class="dot-panel" id="dotPanel">
+            <label>Marcar na leitura:</label>
+            <button class="dot-btn" data-color="gray"   title="Cinza"></button>
+            <button class="dot-btn" data-color="orange" title="Laranja"></button>
+            <button class="dot-btn" data-color="yellow" title="Amarelo"></button>
+            <button class="dot-btn" data-color="green"  title="Verde"></button>
+            <button class="dot-btn" data-color="blue"   title="Azul"></button>
+            <span class="dot-hint">Clique numa bolinha para cravar o ponto na sua leitura</span>
+        </div>
+
+        <!-- Controles de exportação -->
+        <div class="controls-export">
+            <label>📦 Exportar Dados:</label>
+            <button class="btn-export-json" id="btnExportJSON">⬇️ Baixar JSON</button>
+            <button class="btn-export-csv"  id="btnExportCSV">⬇️ Baixar CSV</button>
+            <button class="btn-clear"       id="btnClearLog">🗑️ Limpar Log</button>
+            <div class="session-badge">Registros: <span id="logCount">0</span></div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="visualizations">
+            <div class="visualization-box">
+                <h3>📊 Sua Leitura (Amplitude)</h3>
+                <canvas id="canvasUser"></canvas>
+                <div class="status" id="statusUser">Aguardando inicialização...</div>
+            </div>
+            <div class="visualization-box">
+                <h3>🔊 Frequência Profissional</h3>
+                <canvas id="canvasFrequency"></canvas>
+                <div class="status" id="statusFrequency">Aguardando inicialização...</div>
+            </div>
+        </div>
+
+        <!-- Info técnica -->
+        <div class="info-box">
+            <h4>ℹ️ Informações Técnicas</h4>
+            <p><strong>Modo Atual:</strong> <span id="modoAtual">Não selecionado</span></p>
+            <p><strong>Nível de Volume:</strong> <span id="nivelVolume">0%</span></p>
+            <p><strong>Frequência Detectada:</strong> <span id="frequenciaDetectada">0 Hz</span></p>
+            <p><strong>Ruído Ambiente:</strong> <span id="ruido">0 dB</span></p>
+            <p><strong>Microfone:</strong> <span id="microfoneName">—</span></p>
+        </div>
+
+        <!-- Painel de marcações -->
+        <div class="markers-panel">
+            <h4>📌 Marcações da Sessão — <span id="markerCount">0</span> ponto(s)</h4>
+            <ul id="markerList">
+                <li class="markers-empty">Nenhuma marcação ainda. Aperte 📌 Marcar Ponto durante a captura.</li>
+            </ul>
+        </div>
+
+        <!-- Log da sessão -->
+        <div class="session-log">
+            <h4>🗒️ Log da Sessão</h4>
+            <ul id="sessionLogList">
+                <li class="log-empty">Nenhum dado registrado ainda. Inicie a captura.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h5>👤 Autoria &amp; Identificação</h5>
+                <p><strong>Author:</strong> Chris Montgomery</p>
+                <p>
+                    <strong>ORCID:</strong>&nbsp;
+                    <a class="orcid-badge"
+                       href="https://orcid.org/0009-0009-5364-249X"
+                       target="_blank" rel="noopener noreferrer"
+                       aria-label="Perfil ORCID de Chris Montgomery">
+                        <svg width="14" height="14" viewBox="0 0 256 256" aria-hidden="true">
+                            <circle cx="128" cy="128" r="128" fill="#a6ce39"/>
+                            <path d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.2 178 93 148 93h-23.7v79.4zM88.7 56.8c0 5.5-4.5 9.9-10 9.9s-10-4.4-10-9.9c0-5.5 4.5-10 10-10s10 4.5 10 10z" fill="white"/>
+                        </svg>
+                        0009-0009-5364-249X
+                    </a>
+                </p>
+                <p><strong>Copyright:</strong> © 2025–2026 Chris Montgomery</p>
+                <p><strong>Framework:</strong> TCF/TFB — Anonymo AI Framework 24x24</p>
+            </div>
+            <div class="footer-col">
+                <h5>📝 Methodological Note</h5>
+                <div class="methodological-note">
+                    <p>
+                        This work was developed through a hybrid research process.
+                        Artificial intelligence tools were used as writing and drafting
+                        assistance in later stages of documentation, while the conceptual
+                        framework, structural design, and core ideas were developed by
+                        the human author.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <strong>Anonymo AI</strong> &mdash; Todos os direitos reservados &mdash;
+            <strong>© 2025–2026 Chris Montgomery</strong>
+        </div>
+    </footer>
+
+    <!-- ── JAVASCRIPT ── -->
+    <script>
+    // ─────────────────────────────────────────
+    // VARIÁVEIS GLOBAIS
+    // ─────────────────────────────────────────
+    let audioContext, analyser, microphone, javascriptNode;
+    let isRecording = false;
+    let modoAtual   = 'padrao';
+    let dataArrayUser = new Uint8Array(4096); // waveform (TimeDomain)
+    let dataArrayFreq = new Uint8Array(2048);
+    let sessionLog    = [];          // Array de registros da sessão
+    let markers       = [];          // Array de marcações manuais
+    let sessionStart  = null;        // Timestamp de início da gravação
+    let logInterval   = null;        // Intervalo de coleta de dados
+    let deferredPrompt = null;       // Evento PWA de instalação
+
+    const canvasUser = document.getElementById('canvasUser');
+    const canvasFreq = document.getElementById('canvasFrequency');
+    const ctxUser    = canvasUser.getContext('2d');
+    const ctxFreq    = canvasFreq.getContext('2d');
+
+    // ─────────────────────────────────────────
+    // RESIZE CANVAS
+    // ─────────────────────────────────────────
+    function resizeCanvases() {
+        canvasUser.width  = canvasUser.offsetWidth  || 400;
+        canvasUser.height = canvasUser.offsetHeight || 250;
+        canvasFreq.width  = canvasFreq.offsetWidth  || 400;
+        canvasFreq.height = canvasFreq.offsetHeight || 250;
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    // ─────────────────────────────────────────
+    // INICIALIZAR ÁUDIO
+    // ─────────────────────────────────────────
+    async function initAudio() {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser     = audioContext.createAnalyser();
+            analyser.fftSize = 4096;
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            microphone   = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+
+            javascriptNode = audioContext.createScriptProcessor(4096, 1, 1);
+            analyser.connect(javascriptNode);
+            javascriptNode.connect(audioContext.destination);
+
+            // Detectar nome do microfone
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const mic = devices.find(d => d.kind === 'audioinput');
+            document.getElementById('microfoneName').textContent = mic ? mic.label || 'Microfone detectado' : 'Desconhecido';
+
+            setStatus('✅ Áudio inicializado');
+
+        } catch (error) {
+            alert('Erro ao acessar o microfone. Verifique as permissões.');
+            console.error(error);
+        }
+    }
+
+    function setStatus(msg, active = false) {
+        ['statusUser', 'statusFrequency'].forEach(id => {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            active ? el.classList.add('active') : el.classList.remove('active');
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // VISUALIZAÇÕES
+    // ─────────────────────────────────────────
+    // ── Buffer rolante de picos de amplitude (RMS por bloco)
+    const HISTORY_SIZE = 200;
+    let ampHistory = new Float32Array(HISTORY_SIZE); // valores 0.0 → 1.0
+    let historyPtr  = 0;
+
+    function drawUserVisualization() {
+        // Lê dados reais de forma de onda (TimeDomain)
+        analyser.getByteTimeDomainData(dataArrayUser);
+
+        // ── Calcula RMS de blocos para obter amplitude real do sinal
+        const blockSize = Math.floor(dataArrayUser.length / HISTORY_SIZE);
+        let peakRMS = 0;
+        for (let b = 0; b < HISTORY_SIZE; b++) {
+            let sumSq = 0;
+            for (let s = 0; s < blockSize; s++) {
+                const sample = (dataArrayUser[b * blockSize + s] / 128.0) - 1.0;
+                sumSq += sample * sample;
+            }
+            const rms = Math.sqrt(sumSq / blockSize);
+            // Guarda no buffer rolante — posição atual recebe valor mais recente
+            const pos = (historyPtr + b) % HISTORY_SIZE;
+            ampHistory[pos] = rms;
+            if (rms > peakRMS) peakRMS = rms;
+        }
+        historyPtr = (historyPtr + HISTORY_SIZE) % HISTORY_SIZE;
+
+        // ─────────────────────────────────────────
+        const W       = canvasUser.width;
+        const H       = canvasUser.height;
+        const centerY = H / 2;
+        const maxBarH = centerY * 0.88; // zona segura: não toca as bordas
+
+        // ── Fundo estilo gravador iOS
+        ctxUser.fillStyle = '#e8e8e8';
+        ctxUser.fillRect(0, 0, W, H);
+
+        // ── Escala: divide em 20 partes iguais (−10 a +10)
+        // cada unidade = H/20 pixels
+        const scaleUnit = H / 20;
+
+        // Linhas de grade suaves para cada valor par
+        ctxUser.strokeStyle = 'rgba(160,160,160,0.25)';
+        ctxUser.lineWidth = 1;
+        for (let v = -10; v <= 10; v++) {
+            const y = centerY - v * scaleUnit;
+            ctxUser.beginPath(); ctxUser.moveTo(18, y); ctxUser.lineTo(W, y); ctxUser.stroke();
+        }
+
+        // ── Números da escala no lado esquerdo (+10 … −10)
+        ctxUser.font      = 'bold 9px Arial';
+        ctxUser.textAlign = 'right';
+        for (let v = 10; v >= -10; v -= 2) {
+            const y = centerY - v * scaleUnit;
+            if (v === 0) {
+                // Bolinha preta no zero — ao invés do número
+                ctxUser.textAlign = 'left';
+                ctxUser.fillStyle = '#1a1a1a';
+                ctxUser.beginPath();
+                ctxUser.arc(9, y, 5, 0, Math.PI * 2);
+                ctxUser.fill();
+                ctxUser.textAlign = 'right';
+            } else {
+                ctxUser.fillStyle = Math.abs(v) === 10 ? '#e74c3c' : '#888';
+                ctxUser.fillText(v > 0 ? `+${v}` : `${v}`, 16, y + 3);
+            }
+        }
+        ctxUser.textAlign = 'left';
+
+        // ── Linha verde central (zero) — destaque
+        ctxUser.strokeStyle = '#27ae60';
+        ctxUser.lineWidth   = 2.5;
+        ctxUser.beginPath();
+        ctxUser.moveTo(18, centerY);
+        ctxUser.lineTo(W, centerY);
+        ctxUser.stroke();
+
+        // ── Linhas vermelhas nos limites +10 e −10
+        ctxUser.strokeStyle = 'rgba(231,76,60,0.4)';
+        ctxUser.lineWidth   = 1.5;
+        [centerY - 10 * scaleUnit, centerY + 10 * scaleUnit].forEach(y => {
+            ctxUser.beginPath(); ctxUser.moveTo(18, y); ctxUser.lineTo(W, y); ctxUser.stroke();
+        });
+
+        // ── Largura e espaço de cada barra — finas com espaço entre elas
+        const barW = 2;
+        const step = (W - 20) / HISTORY_SIZE;
+
+        for (let i = 0; i < HISTORY_SIZE; i++) {
+            // Lê do buffer rolante na ordem cronológica (mais antigo → mais novo)
+            const idx = (historyPtr + i) % HISTORY_SIZE;
+            const rms = ampHistory[idx];
+
+            // Mapeia RMS para escala −10/+10
+            // rms 0→1 mapeado para 0→9 unidades (fica dentro de ±9, nunca toca ±10)
+            const amplified = Math.min(rms * 2.8, 1.0);
+            const barH      = amplified * scaleUnit * 9; // máximo 9 unidades = 90% da escala
+
+            // Cor por intensidade
+            const dark = Math.round(30 + (1 - amplified) * 170);
+            ctxUser.fillStyle = `rgb(${dark},${dark},${dark})`;
+
+            const x = 20 + i * step;
+            ctxUser.beginPath();
+            ctxUser.roundRect
+                ? ctxUser.roundRect(x, centerY - barH, barW, barH * 2, 1)
+                : ctxUser.rect(x, centerY - barH, barW, barH * 2);
+            ctxUser.fill();
+        }
+
+        // ── Marcação de tempo embaixo
+        ctxUser.font      = '10px Arial';
+        ctxUser.fillStyle = '#999';
+        ctxUser.textAlign = 'center';
+        const elapsedSec = sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
+        // Marca a cada ~25 barras
+        for (let i = 0; i < HISTORY_SIZE; i += 25) {
+            const tx = 20 + i * step;
+            const secOffset = Math.round((i - HISTORY_SIZE) * (30 / HISTORY_SIZE));
+            const tSec = elapsedSec + secOffset;
+            if (tSec >= 0) {
+                const mm = Math.floor(tSec / 60);
+                const ss = String(tSec % 60).padStart(2, '0');
+                ctxUser.fillText(`${mm}:${ss}`, tx, H - 5);
+                // Tick embaixo
+                ctxUser.strokeStyle = 'rgba(150,150,150,0.5)';
+                ctxUser.lineWidth = 1;
+                ctxUser.beginPath(); ctxUser.moveTo(tx, H - 16); ctxUser.lineTo(tx, H - 20); ctxUser.stroke();
+            }
+        }
+        ctxUser.textAlign = 'left';
+
+        // ── Cursor vertical azul com bolinhas (igual app de voz)
+        const curX = W / 2;
+        ctxUser.strokeStyle = '#2563eb';
+        ctxUser.lineWidth   = 2;
+        ctxUser.beginPath();
+        ctxUser.moveTo(curX, 10);
+        ctxUser.lineTo(curX, H - 10);
+        ctxUser.stroke();
+
+        ctxUser.fillStyle = '#2563eb';
+        [10, H - 10].forEach(cy => {
+            ctxUser.beginPath();
+            ctxUser.arc(curX, cy, 5, 0, Math.PI * 2);
+            ctxUser.fill();
+        });
+
+        // ── Label de nível no canto inferior direito
+        ctxUser.font      = '10px Arial';
+        ctxUser.fillStyle = '#999';
+        const db = peakRMS > 0 ? Math.round(20 * Math.log10(peakRMS)) : -60;
+        ctxUser.fillText(`pico: ${db} dB`, W - 68, H - 8);
+    }
+
+    function drawFrequencyVisualization() {
+        analyser.getByteFrequencyData(dataArrayFreq);
+        ctxFreq.fillStyle = '#f8f9fa';
+        ctxFreq.fillRect(0, 0, canvasFreq.width, canvasFreq.height);
+
+        ctxFreq.strokeStyle = '#e0e0e0';
+        ctxFreq.lineWidth = 1;
+        ctxFreq.font = '10px Arial';
+        ctxFreq.fillStyle = '#999';
+        for (let i = 0; i <= 10; i++) {
+            const x = (i / 10) * canvasFreq.width;
+            ctxFreq.beginPath(); ctxFreq.moveTo(x, 0); ctxFreq.lineTo(x, canvasFreq.height); ctxFreq.stroke();
+            ctxFreq.fillText((i * 4) + ' kHz', x - 15, canvasFreq.height - 5);
+        }
+
+        const barWidth = canvasFreq.width / dataArrayFreq.length;
+        ctxFreq.fillStyle = '#e74c3c';
+        for (let i = 0; i < dataArrayFreq.length; i++) {
+            const barHeight = (dataArrayFreq[i] / 255) * canvasFreq.height;
+            ctxFreq.fillRect(i * barWidth, canvasFreq.height - barHeight, barWidth - 1, barHeight);
+        }
+
+        let maxValue = 0, maxIndex = 0;
+        for (let i = 0; i < dataArrayFreq.length; i++) {
+            if (dataArrayFreq[i] > maxValue) { maxValue = dataArrayFreq[i]; maxIndex = i; }
+        }
+        const freqDetectada = (maxIndex * audioContext.sampleRate) / analyser.fftSize;
+        document.getElementById('frequenciaDetectada').textContent = Math.round(freqDetectada) + ' Hz';
+
+        // ── Desenha marcações no gráfico do técnico
+        markers.forEach((mk, idx) => {
+            // Posição X proporcional ao tempo da marcação dentro da janela visível
+            // Usa os últimos 30s como janela de referência
+            const now     = Date.now();
+            const windowMs = 30000;
+            const age     = now - mk.ts;
+            if (age > windowMs) return; // marcação saiu da janela
+            const x = ((windowMs - age) / windowMs) * canvasFreq.width;
+
+            // Linha vertical laranja
+            ctxFreq.save();
+            ctxFreq.strokeStyle = '#f39c12';
+            ctxFreq.lineWidth   = 2;
+            ctxFreq.setLineDash([5, 3]);
+            ctxFreq.beginPath();
+            ctxFreq.moveTo(x, 0);
+            ctxFreq.lineTo(x, canvasFreq.height - 18);
+            ctxFreq.stroke();
+            ctxFreq.setLineDash([]);
+
+            // Bolinha com número
+            ctxFreq.fillStyle = '#f39c12';
+            ctxFreq.beginPath();
+            ctxFreq.arc(x, 12, 10, 0, Math.PI * 2);
+            ctxFreq.fill();
+            ctxFreq.fillStyle = '#fff';
+            ctxFreq.font = 'bold 10px Arial';
+            ctxFreq.textAlign = 'center';
+            ctxFreq.fillText(idx + 1, x, 16);
+            ctxFreq.textAlign = 'left';
+
+            // Timestamp abaixo
+            ctxFreq.fillStyle = '#e67e22';
+            ctxFreq.font = '9px Arial';
+            ctxFreq.textAlign = 'center';
+            ctxFreq.fillText(mk.elapsed, x, canvasFreq.height - 4);
+            ctxFreq.textAlign = 'left';
+            ctxFreq.restore();
+        });
+
+        return Math.round(freqDetectada);
+    }
+
+    // ─────────────────────────────────────────
+    // LOOP PRINCIPAL
+    // ─────────────────────────────────────────
+    function animate() {
+        if (isRecording) {
+            drawUserVisualization();
+            const freq = drawFrequencyVisualization();
+
+            let sum = 0;
+            dataArrayUser.forEach(v => sum += v);
+            const avg = sum / dataArrayUser.length;
+            const pct = Math.round((avg / 255) * 100);
+            document.getElementById('nivelVolume').textContent = pct + '%';
+        }
+        requestAnimationFrame(animate);
+    }
+
+    // ─────────────────────────────────────────
+    // LOG DE SESSÃO — coleta a cada 2s
+    // ─────────────────────────────────────────
+    function startLogging() {
+        if (logInterval) return;
+        logInterval = setInterval(() => {
+            if (!isRecording || !analyser) return;
+
+            let sum = 0;
+            dataArrayUser.forEach(v => sum += v);
+            const avg  = sum / dataArrayUser.length;
+            const pct  = Math.round((avg / 255) * 100);
+
+            let maxVal = 0, maxIdx = 0;
+            dataArrayFreq.forEach((v, i) => { if (v > maxVal) { maxVal = v; maxIdx = i; } });
+            const freq = Math.round((maxIdx * audioContext.sampleRate) / analyser.fftSize);
+
+            const ruidoEl = document.getElementById('ruido').textContent;
+
+            const entry = {
+                timestamp   : new Date().toISOString(),
+                modo        : modoAtual,
+                volume_pct  : pct,
+                frequencia_hz: freq,
+                ruido_db    : ruidoEl,
+                microfone   : document.getElementById('microfoneName').textContent
+            };
+
+            sessionLog.push(entry);
+            updateLogUI(entry);
+            document.getElementById('logCount').textContent = sessionLog.length;
+        }, 2000);
+    }
+
+    function stopLogging() {
+        clearInterval(logInterval);
+        logInterval = null;
+    }
+
+    function updateLogUI(entry) {
+        const list = document.getElementById('sessionLogList');
+        const emptyItem = list.querySelector('.log-empty');
+        if (emptyItem) emptyItem.remove();
+
+        const li = document.createElement('li');
+        li.textContent = `[${entry.timestamp.slice(11,19)}] modo=${entry.modo} | vol=${entry.volume_pct}% | freq=${entry.frequencia_hz}Hz | ruído=${entry.ruido_db}`;
+        list.appendChild(li);
+        list.scrollTop = list.scrollHeight;
+    }
+
+    // ─────────────────────────────────────────
+    // MARCAÇÕES
+    // ─────────────────────────────────────────
+    function addMarker() {
+        if (!isRecording) {
+            alert('⚠️ Inicie a captura antes de marcar um ponto.');
+            return;
+        }
+
+        // Tempo decorrido desde início da sessão
+        const elapsed = sessionStart
+            ? formatElapsed(Date.now() - sessionStart)
+            : '00:00.000';
+
+        // Dados do momento
+        let freq = 0, vol = 0;
+        if (analyser) {
+            analyser.getByteFrequencyData(dataArrayFreq);
+            let maxV = 0, maxI = 0;
+            dataArrayFreq.forEach((v, i) => { if (v > maxV) { maxV = v; maxI = i; } });
+            freq = Math.round((maxI * audioContext.sampleRate) / analyser.fftSize);
+
+            let sum = 0;
+            dataArrayUser.forEach(v => sum += v);
+            vol = Math.round((sum / dataArrayUser.length / 255) * 100);
+        }
+
+        const marker = {
+            num       : markers.length + 1,
+            ts        : Date.now(),
+            elapsed   : elapsed,
+            timestamp : new Date().toISOString(),
+            modo      : modoAtual,
+            frequencia_hz : freq,
+            volume_pct    : vol,
+            ruido_db      : document.getElementById('ruido').textContent
+        };
+
+        markers.push(marker);
+        updateMarkerUI(marker);
+        document.getElementById('markerCount').textContent = markers.length;
+
+        // Animação no botão
+        const btn = document.getElementById('btnMarcar');
+        btn.classList.remove('pulse');
+        void btn.offsetWidth;
+        btn.classList.add('pulse');
+    }
+
+    function formatElapsed(ms) {
+        const m   = String(Math.floor(ms / 60000)).padStart(2, '0');
+        const s   = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+        const mil = String(ms % 1000).padStart(3, '0');
+        return `${m}:${s}.${mil}`;
+    }
+
+    function updateMarkerUI(mk) {
+        const list = document.getElementById('markerList');
+        const empty = list.querySelector('.markers-empty');
+        if (empty) empty.remove();
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span class="marker-num">${mk.num}</span>
+            <span><strong>${mk.elapsed}</strong> &mdash; modo: ${mk.modo} | freq: ${mk.frequencia_hz} Hz | vol: ${mk.volume_pct}%</span>
+        `;
+        list.appendChild(li);
+        list.scrollTop = list.scrollHeight;
+    }
+
+    // Tecla M ou Espaço como atalho para marcar
+    document.addEventListener('keydown', e => {
+        if ((e.key === 'm' || e.key === 'M') && !e.target.matches('input, textarea')) {
+            addMarker();
+        }
+    });
+
+    document.getElementById('btnMarcar').addEventListener('click', addMarker);
+
+    // ─────────────────────────────────────────
+    // EXPORTAÇÃO — JSON
+    // ─────────────────────────────────────────
+    function exportJSON() {
+        if (sessionLog.length === 0) {
+            alert('⚠️ Nenhum dado registrado ainda. Inicie a captura primeiro.');
+            return;
+        }
+
+        const payload = {
+            meta: {
+                author    : 'Chris Montgomery',
+                orcid     : '0009-0009-5364-249X',
+                copyright : '© 2025–2026 Chris Montgomery',
+                framework : 'TCF/TFB — Anonymo AI Framework 24x24',
+                exported_at: new Date().toISOString(),
+                total_records: sessionLog.length,
+                note: 'This work was developed through a hybrid research process. AI tools were used as drafting assistance; conceptual framework by the human author.'
+            },
+            session: sessionLog,
+            markers: markers
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, `anonymo-ai-session-${dateStamp()}.json`);
+    }
+
+    // ─────────────────────────────────────────
+    // EXPORTAÇÃO — CSV
+    // ─────────────────────────────────────────
+    function exportCSV() {
+        if (sessionLog.length === 0) {
+            alert('⚠️ Nenhum dado registrado ainda. Inicie a captura primeiro.');
+            return;
+        }
+
+        const header = [
+            '# Anonymo AI — Dados de Sessão',
+            '# Author: Chris Montgomery | ORCID: 0009-0009-5364-249X',
+            '# Copyright: © 2025–2026 Chris Montgomery',
+            '# Framework: TCF/TFB — Anonymo AI Framework 24x24',
+            `# Exported: ${new Date().toISOString()}`,
+            '#',
+            'timestamp,modo,volume_pct,frequencia_hz,ruido_db,microfone',
+            '# --- MARCAÇÕES ---',
+            'num,elapsed,timestamp,modo,frequencia_hz,volume_pct,ruido_db',
+            ...markers.map(mk => `${mk.num},"${mk.elapsed}","${mk.timestamp}","${mk.modo}",${mk.frequencia_hz},${mk.volume_pct},"${mk.ruido_db}"`)
+        ].join('\n');
+
+        const rows = sessionLog.map(e =>
+            `"${e.timestamp}","${e.modo}",${e.volume_pct},${e.frequencia_hz},"${e.ruido_db}","${e.microfone}"`
+        ).join('\n');
+
+        const blob = new Blob([header + '\n' + rows], { type: 'text/csv;charset=utf-8;' });
+        downloadBlob(blob, `anonymo-ai-session-${dateStamp()}.csv`);
+    }
+
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function dateStamp() {
+        return new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+    }
+
+    // ─────────────────────────────────────────
+    // BOTÕES — EVENTOS
+    // ─────────────────────────────────────────
+    document.getElementById('btnStart').addEventListener('click', () => {
+        if (!audioContext) initAudio();
+        isRecording  = true;
+        sessionStart = sessionStart || Date.now();
+        setStatus('🔴 Gravando...', true);
+        startLogging();
+    });
+
+    document.getElementById('btnStop').addEventListener('click', () => {
+        isRecording = false;
+        stopLogging();
+        setStatus('⏸️ Parado', false);
+    });
+
+    document.getElementById('btnVoz').addEventListener('click', function () {
+        modoAtual = 'voz';
+        document.getElementById('modoAtual').textContent = '🎤 Voz';
+        this.classList.add('active');
+        document.getElementById('btnPadrao').classList.remove('active');
+    });
+
+    // Fisiologia — desativado até integração com sensor externo
+    // document.getElementById('btnFisiologia') — bloqueado intencionalmente
+
+    document.getElementById('btnPadrao').addEventListener('click', function () {
+        // Abre/fecha o painel das bolinhas
+        const panel = document.getElementById('dotPanel');
+        const isOpen = panel.classList.toggle('show');
+        this.classList.toggle('active', isOpen);
+        // NÃO muda o modoAtual — Padrão só controla o painel de marcações
+    });
+
+    // ── Bolinhas coloridas — cravam marcação no gráfico Sua Leitura
+    let selectedDotColor = null;
+    let userMarkers = []; // marcações coloridas no gráfico do usuário
+
+    const DOT_COLORS = {
+        gray  : '#95a5a6',
+        orange: '#e67e22',
+        yellow: '#f1c40f',
+        green : '#27ae60',
+        blue  : '#2980b9'
+    };
+
+    document.querySelectorAll('.dot-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (!isRecording) {
+                alert('⚠️ Inicie a captura antes de marcar um ponto.');
+                return;
+            }
+            const color = this.dataset.color;
+
+            // Crава a marcação no gráfico
+            const elapsed = sessionStart ? formatElapsed(Date.now() - sessionStart) : '00:00.000';
+            userMarkers.push({
+                ts     : Date.now(),
+                color  : DOT_COLORS[color],
+                colorName: color,
+                elapsed: elapsed,
+                // posição relativa no buffer (barra atual = última barra, posição HISTORY_SIZE-1)
+                barPos : HISTORY_SIZE - 1
+            });
+
+            // Animação na bolinha
+            this.style.transform = 'scale(1.4)';
+            setTimeout(() => { this.style.transform = ''; }, 300);
+
+            // Feedback visual no painel
+            document.querySelectorAll('.dot-btn').forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+            setTimeout(() => this.classList.remove('selected'), 600);
+        });
+    });
+
+    // ── Botão Ruído — abre/fecha painel
+    document.getElementById('btnNoise').addEventListener('click', function () {
+        const panel = document.getElementById('noisePanel');
+        const isOpen = panel.classList.toggle('show');
+        this.classList.toggle('active', isOpen);
+    });
+
+    // ── Tipos de ruído
+    const NOISE_LABELS = {
+        carro   : '🚗 Carro',
+        cachorro: '🐶 Cachorro',
+        buzina  : '📣 Buzina',
+        pessoa  : '🗣️ Pessoa',
+        ruido   : '⚡ Ruído'
+    };
+
+    document.querySelectorAll('.btn-noise-type').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const tipo = this.dataset.noise;
+            const label = NOISE_LABELS[tipo];
+            const db = Math.round(Math.random() * 60 + 40); // 40–99 dB
+            document.getElementById('ruido').textContent = `${db} dB (${label})`;
+
+            // Destaca botão ativo
+            document.querySelectorAll('.btn-noise-type').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Registra no log
+            const elapsed = sessionStart ? formatElapsed(Date.now() - sessionStart) : '00:00.000';
+            const entry = {
+                timestamp : new Date().toISOString(),
+                tipo      : 'ruido',
+                ruido_tipo: tipo,
+                ruido_db  : db,
+                elapsed   : elapsed
+            };
+            sessionLog.push(entry);
+            const list = document.getElementById('sessionLogList');
+            const emptyItem = list.querySelector('.log-empty');
+            if (emptyItem) emptyItem.remove();
+            const li = document.createElement('li');
+            li.textContent = `[${entry.timestamp.slice(11,19)}] 🔊 ruído=${label} | ${db} dB | t=${elapsed}`;
+            list.appendChild(li);
+            list.scrollTop = list.scrollHeight;
+            document.getElementById('logCount').textContent = sessionLog.length;
+
+            // Fecha o painel após 1.5s
+            setTimeout(() => {
+                document.getElementById('noisePanel').classList.remove('show');
+                document.getElementById('btnNoise').classList.remove('active');
+            }, 1500);
+        });
+    });
+
+    document.getElementById('btnExportJSON').addEventListener('click', exportJSON);
+    document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+
+    document.getElementById('btnClearLog').addEventListener('click', () => {
+        if (sessionLog.length === 0) return;
+        if (!confirm('Limpar todos os registros da sessão?')) return;
+        sessionLog = [];
+        document.getElementById('logCount').textContent = '0';
+        const list = document.getElementById('sessionLogList');
+        list.innerHTML = '<li class="log-empty">Log limpo. Inicie uma nova captura.</li>';
+    });
+
+    // ─────────────────────────────────────────
+    // PWA — INSTALAÇÃO
+    // ─────────────────────────────────────────
+    window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('pwa-banner').classList.add('show');
+    });
+
+    document.getElementById('btn-install-pwa').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('PWA install outcome:', outcome);
+        deferredPrompt = null;
+        document.getElementById('pwa-banner').classList.remove('show');
+    });
+
+    document.getElementById('btn-dismiss-pwa').addEventListener('click', () => {
+        document.getElementById('pwa-banner').classList.remove('show');
+    });
+
+    window.addEventListener('appinstalled', () => {
+        document.getElementById('pwa-banner').classList.remove('show');
+        console.log('Anonymo AI instalado como PWA.');
+    });
+
+    // ─────────────────────────────────────────
+    // SERVICE WORKER
+    // ─────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registrado:', reg.scope))
+                .catch(err => console.warn('SW falhou:', err));
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // WEBRTC — SESSÃO REMOTA
+    // ─────────────────────────────────────────
+    let rtcPeer       = null;
+    let rtcConn       = null;
+    let rtcCall       = null;
+    let rtcStream     = null;
+    let rtcAnalyser   = null;
+    let rtcAudioCtx   = null;
+    let rtcSessionCode = null;
+    let rtcConnected  = false;
+
+    // Gera código de 6 chars aleatório
+    function gerarCodigo() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        return code;
+    }
+
+    // Abre/fecha painel remoto
+    document.getElementById('btnRemote').addEventListener('click', function () {
+        const panel = document.getElementById('webrtcPanel');
+        const isOpen = panel.classList.toggle('show');
+        this.classList.toggle('active', isOpen);
+        if (isOpen && !rtcSessionCode) iniciarRTC();
+    });
+
+    function iniciarRTC() {
+        rtcSessionCode = gerarCodigo();
+        document.getElementById('sessionCode').textContent = rtcSessionCode;
+
+        // Gera QR Code com a URL da captura + código
+        const capturaURL = window.location.href.replace('index.html', 'captura.html')
+                           .replace(/\/$/, '') + (window.location.pathname.endsWith('captura.html') ? '' : '/captura.html')
+                           + '?code=' + rtcSessionCode;
+
+        // Usa QRCode.js via CDN (carrega dinamicamente)
+        carregarQR(capturaURL);
+
+        // Inicia peer como host
+        rtcPeer = new Peer(rtcSessionCode + '-host', {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true
+        });
+
+        rtcPeer.on('open', () => {
+            setRtcStatus('waiting', 'Aguardando a pessoa conectar com o código acima...');
+        });
+
+        rtcPeer.on('connection', conn => {
+            rtcConn = conn;
+            setRtcStatus('connected', '✅ Pessoa conectada! Clique em Iniciar para começar.');
+            document.getElementById('btnRtcStart').style.background = '#27ae60';
+        });
+
+        rtcPeer.on('call', call => {
+            rtcCall = call;
+            call.answer(); // Aceita o stream de áudio sem enviar nada de volta
+            call.on('stream', stream => {
+                rtcStream = stream;
+                setRtcStatus('streaming', '🔴 Recebendo áudio da pessoa em tempo real');
+                document.getElementById('rtcDot').className = 'webrtc-dot streaming';
+                iniciarAnaliseRemota(stream);
+            });
+            call.on('close', () => encerrarRTC());
+        });
+
+        rtcPeer.on('error', err => {
+            setRtcStatus('', '⚠️ Erro: ' + err.type + '. Gere um novo código.');
+            console.warn('RTC error:', err);
+        });
+    }
+
+    function iniciarAnaliseRemota(stream) {
+        // Usa o stream remoto como fonte de áudio para o analyser do painel
+        if (rtcAudioCtx) rtcAudioCtx.close();
+        rtcAudioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+        rtcAnalyser  = rtcAudioCtx.createAnalyser();
+        rtcAnalyser.fftSize = 4096;
+        const src = rtcAudioCtx.createMediaStreamSource(stream);
+        src.connect(rtcAnalyser);
+
+        // Substitui o analyser principal pelo remoto
+        analyser = rtcAnalyser;
+        if (!isRecording) {
+            isRecording = true;
+            sessionStart = sessionStart || Date.now();
+            setStatus('🔴 Recebendo voz remota...', true);
+            startLogging();
+        }
+    }
+
+    document.getElementById('btnRtcStart').addEventListener('click', () => {
+        if (!rtcConn) {
+            alert('⚠️ Aguarde a pessoa conectar primeiro.');
+            return;
+        }
+        rtcConn.send({ type: 'start' });
+        setRtcStatus('streaming', '🔴 Captura remota ativa — analisando voz da pessoa');
+        document.getElementById('btnRtcStart').style.display = 'none';
+        document.getElementById('btnRtcStop').classList.add('show');
+    });
+
+    document.getElementById('btnRtcStop').addEventListener('click', () => {
+        if (rtcConn) rtcConn.send({ type: 'stop' });
+        setRtcStatus('connected', 'Captura pausada.');
+        document.getElementById('btnRtcStop').classList.remove('show');
+        document.getElementById('btnRtcStart').style.display = '';
+    });
+
+    document.getElementById('btnRtcNew').addEventListener('click', () => {
+        encerrarRTC();
+        setTimeout(iniciarRTC, 300);
+    });
+
+    function encerrarRTC() {
+        if (rtcCall)   { try { rtcCall.close();  } catch(e){} }
+        if (rtcConn)   { try { rtcConn.close();  } catch(e){} }
+        if (rtcPeer)   { try { rtcPeer.destroy();} catch(e){} }
+        if (rtcAudioCtx) { try { rtcAudioCtx.close(); } catch(e){} }
+        rtcPeer = rtcConn = rtcCall = rtcStream = null;
+        rtcConnected  = false;
+        rtcSessionCode = null;
+        document.getElementById('sessionCode').textContent = '——';
+        document.getElementById('qrcode').innerHTML = '';
+        setRtcStatus('', 'Sessão encerrada.');
+    }
+
+    function setRtcStatus(state, msg) {
+        const dot  = document.getElementById('rtcDot');
+        const text = document.getElementById('rtcStatusText');
+        dot.className  = 'webrtc-dot' + (state ? ' ' + state : '');
+        text.textContent = msg;
+    }
+
+    // Carrega QRCode.js dinamicamente e gera o QR
+    function carregarQR(url) {
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = '<span style="font-size:11px;color:#999">QR...</span>';
+        if (window.QRCode) {
+            qrDiv.innerHTML = '';
+            new QRCode(qrDiv, { text: url, width: 84, height: 84, colorDark: '#2c3e50' });
+            return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+        s.onload = () => {
+            qrDiv.innerHTML = '';
+            new QRCode(qrDiv, { text: url, width: 84, height: 84, colorDark: '#2c3e50' });
+        };
+        document.head.appendChild(s);
+    }
+
+    // ─────────────────────────────────────────
+    // INICIAR
+    // ─────────────────────────────────────────
+    animate();
+    window.addEventListener('load', initAudio);
+    </script>
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chris Montgomery">
+    <meta name="copyright" content="© 2025–2026 Chris Montgomery">
+    <title>Anonymo AI — Documentação Técnica (PT)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #f5f5f0;
+            color: #1a1a1a;
+            padding: 40px 20px;
+        }
+
+        .document {
+            max-width: 860px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        /* ── HEADER ── */
+        .doc-header {
+            background: linear-gradient(135deg, #2c3e50, #3d5166);
+            color: white;
+            padding: 50px 60px 40px;
+            border-bottom: 5px solid #667eea;
+        }
+
+        .doc-header .label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #a29bfe;
+            margin-bottom: 14px;
+        }
+
+        .doc-header h1 {
+            font-size: 30px;
+            font-weight: normal;
+            line-height: 1.3;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .doc-header h2 {
+            font-size: 16px;
+            font-weight: normal;
+            color: #95a5a6;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 13px;
+        }
+
+        .meta-item { color: #bdc3c7; line-height: 1.8; }
+        .meta-item strong { color: #ecf0f1; }
+
+        .orcid-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #a6ce39;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+
+        /* ── BODY ── */
+        .doc-body { padding: 50px 60px; }
+
+        .section { margin-bottom: 44px; }
+
+        .section-label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .section h3 {
+            font-size: 20px;
+            font-weight: normal;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        .section p {
+            font-size: 14.5px;
+            line-height: 1.9;
+            color: #333;
+            margin-bottom: 14px;
+        }
+
+        .section ul {
+            margin: 10px 0 14px 20px;
+            font-size: 14px;
+            line-height: 2;
+            color: #333;
+        }
+
+        .section ul li::marker { color: #667eea; }
+
+        .callout {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #2c3e50;
+            font-style: italic;
+        }
+
+        .callout-warning {
+            background: #fff8ee;
+            border-left-color: #f39c12;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 13px;
+            margin: 16px 0;
+        }
+
+        th {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #ecf0f1;
+            color: #333;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td { background: #f8f9fa; }
+
+        .method-note {
+            background: #1a252f;
+            color: #95a5a6;
+            border-radius: 8px;
+            padding: 24px 28px;
+            font-size: 13px;
+            line-height: 1.9;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        .method-note strong { color: #ecf0f1; font-style: normal; }
+
+        .doc-footer {
+            background: #2c3e50;
+            color: #7f8c8d;
+            padding: 24px 60px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-top: 3px solid #667eea;
+        }
+
+        .doc-footer strong { color: #bdc3c7; }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.5);
+            transition: all 0.2s;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .print-btn:hover { background: #5568d3; transform: translateY(-2px); }
+
+        .lang-switch {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-decoration: none;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .lang-switch:hover { background: #3d5166; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .document { box-shadow: none; }
+            .print-btn, .lang-switch { display: none; }
+            .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="document">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div class="label">Documentação Técnica — Framework de Pesquisa</div>
+        <h1>Anonymo AI<br>Sistema de Análise de Áudio e Frequência</h1>
+        <h2>TCF/TFB — Anonymo AI Framework 24x24</h2>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <strong>Autor:</strong><br>Chris Montgomery
+            </div>
+            <div class="meta-item">
+                <strong>ORCID:</strong><br>
+                <a class="orcid-link" href="https://orcid.org/0009-0009-5364-249X" target="_blank">
+                    ⬤ 0009-0009-5364-249X
+                </a>
+            </div>
+            <div class="meta-item">
+                <strong>Copyright:</strong><br>© 2025–2026 Chris Montgomery
+            </div>
+            <div class="meta-item">
+                <strong>Documento:</strong><br>PT — Referência Técnica v1.0
+            </div>
+            <div class="meta-item">
+                <strong>Status:</strong><br>Pesquisa Ativa — Fase de Testes
+            </div>
+            <div class="meta-item">
+                <strong>Colaboradores:</strong><br>Assistência por IA (Genspark, GPT, Gemini, Manus)
+            </div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="doc-body">
+
+        <!-- 1. Visão Geral -->
+        <div class="section">
+            <div class="section-label">Seção 01</div>
+            <h3>Visão Geral do Projeto</h3>
+            <p>
+                O Anonymo AI é um sistema de captura e análise de frequência de áudio em tempo real,
+                desenvolvido como parte do framework de pesquisa TCF/TFB. O sistema foi projetado
+                para capturar, visualizar e anotar sinais de áudio de voz e fisiológicos por meio
+                de uma interface baseada em navegador, utilizando microfones profissionais e
+                sensores externos.
+            </p>
+            <p>
+                A fase atual concentra-se na análise de áudio de voz — capturando frequência vocal,
+                amplitude e padrões espectrais em tempo real — com integração futura planejada
+                para sensores fisiológicos externos (baseados no pulso/punho).
+            </p>
+
+            <div class="callout">
+                "Este sistema opera na interseção entre análise de voz, monitoramento fisiológico
+                e documentação estruturada de pesquisa — projetado para precisão,
+                reprodutibilidade e observação em múltiplos ângulos."
+            </div>
+        </div>
+
+        <!-- 2. Contexto de Pesquisa -->
+        <div class="section">
+            <div class="section-label">Seção 02</div>
+            <h3>Contexto de Pesquisa e Autorização</h3>
+            <p>
+                Todas as sessões conduzidas com este sistema são realizadas mediante consentimento
+                informado, em conformidade com os padrões éticos de pesquisa aplicáveis.
+                Os participantes são informados sobre a natureza da coleta de dados antes
+                do início de qualquer sessão.
+            </p>
+            <p>
+                Os dados coletados são utilizados exclusivamente para fins de pesquisa no âmbito
+                do framework Anonymo AI. Nenhum dado é compartilhado publicamente sem
+                autorização explícita. O pesquisador possui credenciais profissionais adequadas
+                para conduzir este tipo de pesquisa observacional.
+            </p>
+
+            <div class="callout callout-warning">
+                Todas as sessões de pesquisa requerem termo de consentimento livre e esclarecido
+                assinado pelos participantes, conforme legislação vigente.
+            </div>
+        </div>
+
+        <!-- 3. Arquitetura de Sensores -->
+        <div class="section">
+            <div class="section-label">Seção 03</div>
+            <h3>Arquitetura de Sensores — O Triângulo de Áudio</h3>
+            <p>
+                O modelo central de observação é construído em torno do que o framework denomina
+                <strong>"Triângulo de Áudio"</strong> — uma configuração multi-sensor que capta
+                sinais de áudio de diferentes posições simultaneamente, permitindo análise
+                cruzada que elimina variáveis de distância e fornece dados mais ricos.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Posição do Sensor</th>
+                    <th>Tipo de Captura</th>
+                    <th>Variável Principal</th>
+                </tr>
+                <tr>
+                    <td>Lapela / Proximidade da boca</td>
+                    <td>Voz — captura direta</td>
+                    <td>Frequência vocal, articulação</td>
+                </tr>
+                <tr>
+                    <td>Pulso / Sensor fisiológico</td>
+                    <td>Fisiológico — indireto</td>
+                    <td>Ressonância corporal, estado fisiológico</td>
+                </tr>
+                <tr>
+                    <td>Externo / Ambiente</td>
+                    <td>Ruído ambiental</td>
+                    <td>Classificação de interferência de fundo</td>
+                </tr>
+            </table>
+
+            <p>
+                Nota metodológica importante: quando o sensor de pulso é o dispositivo de captura
+                primário e o telefone/microfone está a uma distância maior, a interpretação lógica
+                <strong>se inverte</strong> — a variável de distância se desloca do pulso para
+                a fonte de voz. O sistema considera essa inversão em todas as variantes de observação.
+            </p>
+
+            <div class="callout">
+                Dentro deste modelo de observação triangular, o framework atual mapeia
+                <strong>múltiplas variantes de observação</strong> — cada uma representando
+                uma combinação distinta de posições de sensores, distâncias e prioridades de sinal.
+                A matriz completa de variantes é documentada separadamente dentro do framework TCF/TFB.
+            </div>
+        </div>
+
+        <!-- 4. Funcionalidades -->
+        <div class="section">
+            <div class="section-label">Seção 04</div>
+            <h3>Funcionalidades do Sistema</h3>
+
+            <table>
+                <tr>
+                    <th>Funcionalidade</th>
+                    <th>Descrição</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>Visualização de amplitude em tempo real</td>
+                    <td>Forma de onda com escala ±10, calibrada para voz</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Analisador de espectro de frequência</td>
+                    <td>Display FFT profissional (0–40 kHz)</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Marcadores de ponto</td>
+                    <td>Anotações manuais com timestamp no gráfico de frequência</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Marcadores coloridos (5 bolinhas)</td>
+                    <td>Cinza, Laranja, Amarelo, Verde, Azul — marcação visual na forma de onda</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Classificação de ruído</td>
+                    <td>Carro, Cachorro, Buzina, Pessoa, Ruído — registrado com nível em dB</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Exportação de dados da sessão</td>
+                    <td>JSON e CSV com metadados completos de autoria</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Sessão de captura remota</td>
+                    <td>Conexão WebRTC — áudio do participante no painel do pesquisador</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>PWA — app instalável</td>
+                    <td>Funciona offline, instalável em desktop e celular</td>
+                    <td>✅ Ativo</td>
+                </tr>
+                <tr>
+                    <td>Modo Fisiologia</td>
+                    <td>Integração com sensor externo de pulso/punho</td>
+                    <td>🔒 Planejado (Manus)</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 5. Framework Colaborativo -->
+        <div class="section">
+            <div class="section-label">Seção 05</div>
+            <h3>Framework Colaborativo de IA</h3>
+            <p>
+                Este projeto de pesquisa emprega um modelo de colaboração distribuída com IA,
+                onde diferentes sistemas de inteligência artificial são designados para domínios
+                específicos do trabalho:
+            </p>
+
+            <table>
+                <tr>
+                    <th>Plataforma</th>
+                    <th>Domínio</th>
+                </tr>
+                <tr>
+                    <td><strong>Genspark (Spark)</strong></td>
+                    <td>Sistema de análise de áudio — desenvolvimento da interface, visualização de frequência</td>
+                </tr>
+                <tr>
+                    <td><strong>Manus</strong></td>
+                    <td>Fisiologia — integração do sensor de pulso, análise de sinais corporais</td>
+                </tr>
+                <tr>
+                    <td><strong>GPT (OpenAI)</strong></td>
+                    <td>Documentação de pesquisa, assistência de escrita, framework teórico</td>
+                </tr>
+                <tr>
+                    <td><strong>Gemini (Google)</strong></td>
+                    <td>Estudos de campo, cruzamento de dados, pesquisa aplicada</td>
+                </tr>
+            </table>
+
+            <p>
+                Todas as contribuições das IAs são de natureza assistiva. O framework conceitual,
+                o design da pesquisa, as decisões estruturais e a interpretação dos resultados
+                permanecem como trabalho intelectual exclusivo do autor humano.
+            </p>
+        </div>
+
+        <!-- 6. Nota Metodológica -->
+        <div class="section">
+            <div class="section-label">Seção 06</div>
+            <h3>Nota Metodológica</h3>
+            <div class="method-note">
+                <strong>Processo de Pesquisa Híbrido:</strong><br>
+                Este trabalho foi desenvolvido por meio de um processo de pesquisa híbrido.
+                Ferramentas de inteligência artificial foram utilizadas como assistência de
+                escrita e rascunho nas etapas posteriores da documentação, enquanto o framework
+                conceitual, o design estrutural e as ideias centrais foram desenvolvidos
+                pelo autor humano.<br><br>
+                O uso de múltiplas plataformas de IA neste projeto reflete uma escolha
+                metodológica deliberada para aproveitar capacidades especializadas em diferentes
+                domínios de pesquisa, mantendo autoria unificada e responsabilidade intelectual.
+            </div>
+        </div>
+
+        <!-- 7. Próximos Passos -->
+        <div class="section">
+            <div class="section-label">Seção 07</div>
+            <h3>Próximos Passos</h3>
+            <ul>
+                <li>Testes de campo completos com microfone Blue Yeti USB</li>
+                <li>Validar sessão de captura remota (WebRTC) em ambiente Wi-Fi local</li>
+                <li>Integrar sensor de pulso/punho via Manus (módulo Fisiologia)</li>
+                <li>Refinar calibração para faixa de frequência de voz</li>
+                <li>Documentar matriz completa de variantes de observação (TCF/TFB interno)</li>
+                <li>Exportação de gravação de sessão (formato .wav)</li>
+                <li>Cruzar dados do triângulo de áudio com leituras fisiológicas</li>
+            </ul>
+        </div>
+
+    </div><!-- /doc-body -->
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+        <div>
+            <strong>Anonymo AI</strong> — TCF/TFB Framework 24x24<br>
+            © 2025–2026 Chris Montgomery — Todos os direitos reservados
+        </div>
+        <div style="text-align:right;">
+            ORCID: 0009-0009-5364-249X<br>
+            Documento: PT Referência Técnica v1.0
+        </div>
+    </div>
+
+</div><!-- /document -->
+
+<button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+<a class="lang-switch" href="doc_en.html">🇺🇸 English version</a>
+
+</body>
+</html>
