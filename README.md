@@ -1,3 +1,8 @@
+Part of the **TCF / TFB + Anonymo Ecosystem**  
+System hub: https://github.com/christianmontgomery220-svg/tcf-anonymo-ecosystem
+
+---
+
 # Theory of Fundamental Belief (TFB) — Proof of Existence
 
 > **This repository exists solely as proof of existence, authorship, and research documentation. No authorization for use is granted. See [LICENSE](LICENSE) for details.**
